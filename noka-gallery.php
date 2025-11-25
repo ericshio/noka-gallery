@@ -290,6 +290,7 @@ new Noka_Gallery();
  * Registers the client-side JavaScript bundle using Divi's PackageBuildManager.
  */
 function noka_gallery_register_visual_builder_assets() {
+    // 1. Safety Checks
     if ( ! function_exists('et_builder_should_load_blocks') || ! et_builder_should_load_blocks() ) {
         return;
     }
@@ -301,21 +302,22 @@ function noka_gallery_register_visual_builder_assets() {
     $handle = 'noka-gallery-module';
     $build_path = NOKA_PATH . 'visual-builder/build/noka-gallery-module.asset.php';
 
-    // FIX: Added 'wp-hooks' here so your index.jsx works!
-    $required_deps = ['react', 'divi-module-library', 'divi-registry', 'wp-hooks']; 
+    // 2. DEFINITIVE DEPENDENCIES (No 'divi-registry', Yes 'wp-hooks')
+    $required_deps = ['react', 'divi-module-library', 'wp-hooks']; 
     $version = NOKA_VERSION;
     $file_deps = [];
 
-    // 2. Read dependencies from asset file
+    // 3. Read dependencies from asset file (if it exists)
     if ( file_exists( $build_path ) ) {
         $asset_data = include( $build_path );
         $file_deps = $asset_data['dependencies'] ?? [];
         $version = $asset_data['version'] ?? NOKA_VERSION;
     } 
 
-    // 3. Merge and deduplicate all dependencies
+    // 4. Merge dependencies
     $dependencies = array_unique( array_merge( $required_deps, $file_deps ) );
 
+    // 5. Register the Package
     \ET\Builder\VisualBuilder\Assets\PackageBuildManager::register_package_build(
         [
             'name'    => $handle,

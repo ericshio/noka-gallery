@@ -2,20 +2,16 @@
 import React from 'react';
 import metadata from './module.json'; 
 
-// CRITICAL: Ensure you import your styles if they are bundled via Webpack
-// Uncomment this line if your CSS source file exists here:
-// import '../../includes/assets/css/style.css'; 
-
 // --- ROBUST GLOBAL DESTRUCTURING ---
-// Safely assign global objects to variables.
-const DiviModule = window?.divi?.module || {};
+// We use 'window' safely here to prevent linter errors if window is undefined in the editor environment
+const w = typeof window !== 'undefined' ? window : {};
+const DiviModule = w.divi?.module || {};
 
 const {
   ModuleContainer,
   StyleContainer,
   elementClassnames,
 } = DiviModule;
-
 
 // --- 1. Style Component ---
 const ModuleStyles = ({ attrs, elements, settings, noStyleTag }) => (
@@ -28,43 +24,37 @@ const ModuleStyles = ({ attrs, elements, settings, noStyleTag }) => (
  * Function for registering module classnames.
  */
 const moduleClassnames = ({ classnamesInstance, attrs }) => {
-  // FIX: elementClassnames is now safely available from the global destructuring
   classnamesInstance.add(elementClassnames({ attrs: attrs?.module?.decoration ?? {} }));
 }
 
 /**
- * Noka Gallery Module Object (Stateless, Tutorial Style).
- * This component handles the Visual Builder preview.
+ * Noka Gallery Module Object (Stateless)
  */
 const NokaGalleryModule = {
-  // Metadata that is used on Visual Builder and Frontend
-  metadata,
+  metadata, // Base metadata (will be overridden during registration)
 
-  // Layout renderer components.
   renderers: {
-    // This is the component that runs in the Visual Builder iframe
     edit: ({ attrs, id, name, elements }) => {
-      // Logic for Visual Builder Preview (simplified)
       const galleryId = attrs?.gallery_select?.innerContent?.desktop?.value; 
-
-      // Check if the value is Dynamic Content (starts with @)
+      
+      // Check if Dynamic Content is being used (starts with @)
       const isDynamic = galleryId && typeof galleryId === 'string' && galleryId.startsWith('@');
 
       let previewContent;
       
       if (!galleryId || galleryId === 'none') {
         previewContent = (
-            <div className="noka-placeholder-vb" style={{padding:'20px', textAlign:'center', border:'1px dashed #DDD'}}>
-                Select a Noka Gallery in the settings sidebar.
+            <div className="noka-placeholder-vb" style={{padding:'20px', textAlign:'center', border:'1px dashed #DDD', background: '#f9f9f9', color: '#333'}}>
+                <strong>Noka Gallery</strong><br/>
+                Please select a Gallery in the settings.
             </div>
         );
       } else {
-        const displayText = isDynamic ? "Dynamic Gallery Selected" : `Gallery ID ${galleryId} Selected`;
-        
+        const displayText = isDynamic ? "Dynamic Gallery Selected" : `Gallery ID: ${galleryId}`;
         previewContent = (
-            <div className="noka-loading-vb" style={{padding:'20px', textAlign:'center', border:'1px dashed #7AA', minHeight:'100px'}}>
-                {displayText} <br/>
-                <small>(Front-End Rendered by PHP Shortcode)</small>
+            <div className="noka-loading-vb" style={{padding:'20px', textAlign:'center', border:'1px dashed #7AA', minHeight:'100px', background: '#f0f8ff', color: '#333'}}>
+                <strong>{displayText}</strong><br/>
+                <small>(Gallery will render on the frontend)</small>
             </div>
         );
       }
@@ -87,8 +77,7 @@ const NokaGalleryModule = {
       );
     },
   },
-
-  // Placeholder content for new modules
+  
   placeholderContent: {
     module: {
       decoration: {
@@ -105,25 +94,44 @@ const NokaGalleryModule = {
   },
 };
 
-// --- MODULE REGISTRATION ---
+// --- SAFER MODULE REGISTRATION ---
 
-// 1. Get addAction from WordPress hooks (Global variable)
-const { addAction } = window?.vendor?.wp?.hooks || {};
+const hooks = w.vendor?.wp?.hooks;
+const diviLib = w.divi?.moduleLibrary;
 
-// 2. Get registerModule from Divi (Global variable)
-const { registerModule } = window?.divi?.moduleLibrary || {};
+if (hooks && diviLib) {
+    hooks.addAction('divi.moduleLibrary.registerModuleLibraryStore.after', 'noka.galleryModule', () => {
+        
+        // 1. Deep clone metadata to avoid "Read Only" errors in strict mode
+        const dynamicMetadata = JSON.parse(JSON.stringify(metadata));
 
-if (addAction && registerModule) {
-    // 3. Register the module ONLY after Divi's library store is ready.
-    addAction('divi.moduleLibrary.registerModuleLibraryStore.after', 'noka.galleryModule', () => {
-        registerModule(NokaGalleryModule.metadata, NokaGalleryModule);
+        // 2. Inject the Dropdown Options from the Global Variable
+        // We use a default object if NokaData is missing to prevent crashes
+        const galleryOptions = w.NokaData || { 'none': 'No Galleries Found (Check PHP)' };
+
+        try {
+            // Safely navigate to the dropdown component settings
+            const settings = dynamicMetadata?.attributes?.gallery_select?.settings?.innerContent?.item;
+            
+            if (settings && settings.component) {
+                // Inject the options prop
+                settings.component.props = {
+                    ...settings.component.props,
+                    options: galleryOptions
+                };
+            }
+        } catch (err) {
+            console.error('Noka Gallery: Failed to inject options', err);
+        }
+
+        // 3. Register the modified metadata
+        diviLib.registerModule(dynamicMetadata, NokaGalleryModule);
+        console.log('Noka Gallery: Registered successfully with dynamic options.');
     });
-    console.log('SUCCESS: Noka Gallery Registration Hook Added!');
 } else {
-    // This should only happen if the PHP dependency logic is wrong.
-    console.error('ERROR: Divi registration object or wp-hooks not found. Module registration failed.');
+    console.warn('Noka Gallery: Divi or WP Hooks not found. Module not registered.');
 }
 
-// Ensure the source file is built after this change.
+
 
 export default NokaGalleryModule;
