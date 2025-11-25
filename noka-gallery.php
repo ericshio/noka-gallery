@@ -39,15 +39,10 @@ class Noka_Gallery {
         add_action( 'save_post', array( $this, 'save_gallery_data' ) );
         add_action( 'admin_enqueue_scripts', array( $this, 'admin_scripts' ) );
         
-        // --- FINAL FIX: RELIABLE BUILDER JS ENQUEUE HOOKS ---
-        // 1. Use the standard WP hook with the robust conditional check.
-        // add_action( 'wp_enqueue_scripts', array( $this, 'force_builder_js_load' ) );
-        
-        // 2. Add fix for MediaElement conflict that crashes the builder JS.
+        // Fix for MediaElement conflict that crashes the builder JS.
         add_action( 'admin_enqueue_scripts', array( $this, 'fix_mediaelement_conflict' ), 1 );
-        // add_action( 'wp_enqueue_scripts', array( $this, 'fix_mediaelement_conflict' ), 1 ); // <-- NEW HOOK
 
-        // 3. Keep Divi 5 registration method for official hooks (backend registration)
+        // Keep Divi 5 registration method for official hooks (backend registration)
         add_action( 'divi_visual_builder_assets_before_enqueue_scripts', 'noka_gallery_register_visual_builder_assets' );
         add_action( 'rest_api_init', array( $this, 'register_rest_route' ) );
         add_action( 'wp_footer', array( $this, 'render_lightbox_markup' ) );
@@ -179,6 +174,7 @@ class Noka_Gallery {
         if ( ! $a['id'] ) return '';
         $post_id = $a['id'];
 
+        // Fetch settings
         $saved_cols_d = get_post_meta( $post_id, '_noka_cols_d', true ) ?: 3;
         $saved_cols_t = get_post_meta( $post_id, '_noka_cols_t', true ) ?: 2;
         $saved_cols_m = get_post_meta( $post_id, '_noka_cols_m', true ) ?: 1;
@@ -201,19 +197,24 @@ class Noka_Gallery {
 
         $version = NOKA_VERSION;
 
-        wp_enqueue_script( 
-            'noka-frontend', 
-            NOKA_URL . 'includes/assets/js/frontend.js', 
-            array( 'jquery', 'masonry', 'imagesloaded' ), 
-            $version, 
-            true 
-        );
-        wp_enqueue_style( 
-            'noka-style', 
-            NOKA_URL . 'visual-builder/build/noka-gallery-module.css', 
-            array(), 
-            $version 
-        );
+        // --- FIX: Prevent Double Loading in Visual Builder ---
+        // We only enqueue these manually if we are NOT inside the Visual Builder.
+        // In the builder, the PackageBuildManager handles the loading.
+        if ( ! function_exists( 'et_core_is_fb_enabled' ) || ! et_core_is_fb_enabled() ) {
+            wp_enqueue_script( 
+                'noka-frontend', 
+                NOKA_URL . 'includes/assets/js/frontend.js', 
+                array( 'jquery', 'masonry', 'imagesloaded' ), 
+                $version, 
+                true 
+            );
+            wp_enqueue_style( 
+                'noka-style', 
+                NOKA_URL . 'visual-builder/build/noka-gallery-module.css', 
+                array(), 
+                $version 
+            );
+        }
 
         $gap_value = (int) $final_atts['gap'];
 
@@ -269,37 +270,12 @@ class Noka_Gallery {
         <?php
         return ob_get_clean();
     }
-    /*
-    // --- FINAL FIX: FORCE BUILDER JS LOAD METHOD (Correctly inside class) ---
-    public function force_builder_js_load() {
-        // This acts as a reliable fallback using the stable et_core_is_fb_enabled check.
-        if ( is_user_logged_in() && function_exists('et_core_is_fb_enabled') && et_core_is_fb_enabled() ) {
-            $handle = 'noka-gallery-module-force'; // Use a unique handle
-            $build_url = NOKA_URL . 'visual-builder/build/noka-gallery-module.js';
-
-            $dependencies = ['react', 'jquery', 'divi-module-library', 'wp-hooks'];
-
-            wp_enqueue_script( 
-                $handle, 
-                $build_url, 
-                $dependencies, 
-                NOKA_VERSION, 
-                false // Load in the head for immediate execution
-            );
-
-            if ( class_exists('Noka_Gallery_Helper') ) {
-                wp_localize_script( $handle, 'NokaData', array( 'galleries' => Noka_Gallery_Helper::get_galleries() ));
-            }
-        }
-    }
-    */
     
     public function fix_mediaelement_conflict() {
         if ( function_exists('et_core_is_fb_enabled') && et_core_is_fb_enabled() ) {
             wp_deregister_script( 'wp-mediaelement' );
             wp_deregister_style( 'wp-mediaelement' );
         
-            // Existing: Dequeue just in case (kept for safety)
             wp_dequeue_script( 'wp-mediaelement' );
             wp_dequeue_style( 'wp-mediaelement' );
         }
@@ -309,7 +285,7 @@ class Noka_Gallery {
 new Noka_Gallery();
 
 
-// --- DIVI 5 PACKAGE MANAGER REGISTRATION FUNCTION (Required for backend module list) ---
+// --- DIVI 5 PACKAGE MANAGER REGISTRATION FUNCTION ---
 /**
  * Registers the client-side JavaScript bundle using Divi's PackageBuildManager.
  */
@@ -325,8 +301,8 @@ function noka_gallery_register_visual_builder_assets() {
     $handle = 'noka-gallery-module';
     $build_path = NOKA_PATH . 'visual-builder/build/noka-gallery-module.asset.php';
 
-    // 1. Define required Divi dependencies (CRITICAL)
-    $required_deps = ['react', 'divi-module-library', 'divi-registry']; 
+    // FIX: Added 'wp-hooks' here so your index.jsx works!
+    $required_deps = ['react', 'divi-module-library', 'divi-registry', 'wp-hooks']; 
     $version = NOKA_VERSION;
     $file_deps = [];
 
@@ -338,7 +314,6 @@ function noka_gallery_register_visual_builder_assets() {
     } 
 
     // 3. Merge and deduplicate all dependencies
-    // This ensures your script is loaded AFTER the Divi registry objects are available.
     $dependencies = array_unique( array_merge( $required_deps, $file_deps ) );
 
     \ET\Builder\VisualBuilder\Assets\PackageBuildManager::register_package_build(
@@ -347,7 +322,7 @@ function noka_gallery_register_visual_builder_assets() {
             'version' => $version,
             'script'  => [
                 'src'                => NOKA_URL . 'visual-builder/build/noka-gallery-module.js',
-                'deps'               => $dependencies, // Use the merged dependencies
+                'deps'               => $dependencies,
                 'enqueue_top_window' => false, 
                 'enqueue_app_window' => true, 
             ],
