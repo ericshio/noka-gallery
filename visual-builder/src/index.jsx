@@ -46,12 +46,27 @@ const NokaGalleryModule = {
     edit: ({ attrs, id, name, elements }) => {
       // Logic for Visual Builder Preview (simplified)
       const galleryId = attrs?.gallery_select?.innerContent?.desktop?.value; 
+
+      // Check if the value is Dynamic Content (starts with @)
+      const isDynamic = galleryId && typeof galleryId === 'string' && galleryId.startsWith('@');
+
       let previewContent;
       
       if (!galleryId || galleryId === 'none') {
-        previewContent = <div className="noka-placeholder-vb" style={{padding:'20px', textAlign:'center', border:'1px dashed #DDD'}}>Select a Noka Gallery in the settings sidebar.</div>;
+        previewContent = (
+            <div className="noka-placeholder-vb" style={{padding:'20px', textAlign:'center', border:'1px dashed #DDD'}}>
+                Select a Noka Gallery in the settings sidebar.
+            </div>
+        );
       } else {
-        previewContent = <div className="noka-loading-vb" style={{padding:'20px', textAlign:'center', border:'1px dashed #7AA', minHeight:'100px'}}>Gallery ID {galleryId} Selected (Front-End Rendered by PHP Shortcode).</div>;
+        const displayText = isDynamic ? "Dynamic Gallery Selected" : `Gallery ID ${galleryId} Selected`;
+        
+        previewContent = (
+            <div className="noka-loading-vb" style={{padding:'20px', textAlign:'center', border:'1px dashed #7AA', minHeight:'100px'}}>
+                {displayText} <br/>
+                <small>(Front-End Rendered by PHP Shortcode)</small>
+            </div>
+        );
       }
 
       return (
@@ -90,18 +105,23 @@ const NokaGalleryModule = {
   },
 };
 
-// --- MODULE REGISTRATION: Clean, Immediate Check (The Divi 5 Way) ---
+// --- MODULE REGISTRATION ---
 
-// Get the registration function, which is made available by 'divi-module-library' dependency.
-const registerModuleFunc = window.divi?.moduleLibrary?.registerModule || window.divi?.registry?.registerModule;
+// 1. Get addAction from WordPress hooks (Global variable)
+const { addAction } = window?.vendor?.wp?.hooks || {};
 
-if (registerModuleFunc) {
-    // Register immediately once the script is executed.
-    registerModuleFunc(NokaGalleryModule.metadata, NokaGalleryModule);
-    console.log('SUCCESS: Noka Gallery Registered (Clean Check)!');
+// 2. Get registerModule from Divi (Global variable)
+const { registerModule } = window?.divi?.moduleLibrary || {};
+
+if (addAction && registerModule) {
+    // 3. Register the module ONLY after Divi's library store is ready.
+    addAction('divi.moduleLibrary.registerModuleLibraryStore.after', 'noka.galleryModule', () => {
+        registerModule(NokaGalleryModule.metadata, NokaGalleryModule);
+    });
+    console.log('SUCCESS: Noka Gallery Registration Hook Added!');
 } else {
     // This should only happen if the PHP dependency logic is wrong.
-    console.error('ERROR: Divi registration object not found. Module registration failed.');
+    console.error('ERROR: Divi registration object or wp-hooks not found. Module registration failed.');
 }
 
 // Ensure the source file is built after this change.

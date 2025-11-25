@@ -57,7 +57,9 @@
             "label": "Select Gallery",
             "description": "Choose the gallery to display.",
             "features": {
-              "dynamicContent": false
+              "dynamicContent": {
+                "type": "text"
+              }
             },
             "component": {
               "name": "divi/select",
