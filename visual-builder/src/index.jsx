@@ -6,20 +6,15 @@ import metadata from './module.json';
 // Uncomment this line if your CSS source file exists here:
 // import '../../includes/assets/css/style.css'; 
 
-// --- FINAL FIX: ROBUST GLOBAL DESTRUCTURING ---
-// Safely assign global objects to variables. We use the fallback {} to prevent
-// TypeErrors if window.divi is not fully defined when the script initially loads.
+// --- ROBUST GLOBAL DESTRUCTURING ---
+// Safely assign global objects to variables.
 const DiviModule = window?.divi?.module || {};
 
 const {
-  ModuleContainer,  // Now accessed via DiviModule
-  StyleContainer,   // Now accessed via DiviModule
-  elementClassnames, // Now accessed via DiviModule
+  ModuleContainer,
+  StyleContainer,
+  elementClassnames,
 } = DiviModule;
-
-const {
-  registerModule
-} = window?.divi?.moduleLibrary || window?.divi?.registry || {};
 
 
 // --- 1. Style Component ---
@@ -50,7 +45,7 @@ const NokaGalleryModule = {
     // This is the component that runs in the Visual Builder iframe
     edit: ({ attrs, id, name, elements }) => {
       // Logic for Visual Builder Preview (simplified)
-      const galleryId = attrs?.gallery_select?.value; 
+      const galleryId = attrs?.gallery_select?.innerContent?.desktop?.value; 
       let previewContent;
       
       if (!galleryId || galleryId === 'none') {
@@ -60,7 +55,7 @@ const NokaGalleryModule = {
       }
 
       return (
-        <ModuleContainer // ModuleContainer is now safely available globally
+        <ModuleContainer
           attrs={attrs}
           elements={elements}
           id={id}
@@ -95,19 +90,20 @@ const NokaGalleryModule = {
   },
 };
 
-// --- FINAL REGISTRATION FIX: Ensure Execution After Divi Loads ---
-// We use window.addEventListener('load') as the most reliable, generic hook.
+// --- MODULE REGISTRATION: Clean, Immediate Check (The Divi 5 Way) ---
 
-window.addEventListener('load', () => {
-    // Safely re-check registerModule after the window is fully loaded
-    const registerModuleFinal = window.divi?.moduleLibrary?.registerModule || window.divi?.registry?.registerModule;
-    
-    if (window.divi && registerModuleFinal) {
-        registerModuleFinal(NokaGalleryModule.metadata, NokaGalleryModule);
-        console.log('SUCCESS: Noka Gallery Registered (Delayed Load)!'); 
-    }
-});
+// Get the registration function, which is made available by 'divi-module-library' dependency.
+const registerModuleFunc = window.divi?.moduleLibrary?.registerModule || window.divi?.registry?.registerModule;
 
-// The old conflictive hooks (like addAction) have been removed.
+if (registerModuleFunc) {
+    // Register immediately once the script is executed.
+    registerModuleFunc(NokaGalleryModule.metadata, NokaGalleryModule);
+    console.log('SUCCESS: Noka Gallery Registered (Clean Check)!');
+} else {
+    // This should only happen if the PHP dependency logic is wrong.
+    console.error('ERROR: Divi registration object not found. Module registration failed.');
+}
+
+// Ensure the source file is built after this change.
 
 export default NokaGalleryModule;

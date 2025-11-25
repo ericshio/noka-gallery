@@ -45,7 +45,7 @@ class Noka_Gallery {
         
         // 2. Add fix for MediaElement conflict that crashes the builder JS.
         add_action( 'admin_enqueue_scripts', array( $this, 'fix_mediaelement_conflict' ), 1 );
-        add_action( 'wp_enqueue_scripts', array( $this, 'fix_mediaelement_conflict' ), 1 ); // <-- NEW HOOK
+        // add_action( 'wp_enqueue_scripts', array( $this, 'fix_mediaelement_conflict' ), 1 ); // <-- NEW HOOK
 
         // 3. Keep Divi 5 registration method for official hooks (backend registration)
         add_action( 'divi_visual_builder_assets_before_enqueue_scripts', 'noka_gallery_register_visual_builder_assets' );
@@ -325,15 +325,21 @@ function noka_gallery_register_visual_builder_assets() {
     $handle = 'noka-gallery-module';
     $build_path = NOKA_PATH . 'visual-builder/build/noka-gallery-module.asset.php';
 
-    $dependencies = ['react', 'jquery', 'divi-module-library'];
+    // 1. Define required Divi dependencies (CRITICAL)
+    $required_deps = ['react', 'divi-module-library', 'divi-registry']; 
     $version = NOKA_VERSION;
+    $file_deps = [];
 
-    // RESTORED: Asset file inclusion logic
+    // 2. Read dependencies from asset file
     if ( file_exists( $build_path ) ) {
         $asset_data = include( $build_path );
-        $dependencies = $asset_data['dependencies'];
-        $version = $asset_data['version'];
+        $file_deps = $asset_data['dependencies'] ?? [];
+        $version = $asset_data['version'] ?? NOKA_VERSION;
     } 
+
+    // 3. Merge and deduplicate all dependencies
+    // This ensures your script is loaded AFTER the Divi registry objects are available.
+    $dependencies = array_unique( array_merge( $required_deps, $file_deps ) );
 
     \ET\Builder\VisualBuilder\Assets\PackageBuildManager::register_package_build(
         [
@@ -341,16 +347,15 @@ function noka_gallery_register_visual_builder_assets() {
             'version' => $version,
             'script'  => [
                 'src'                => NOKA_URL . 'visual-builder/build/noka-gallery-module.js',
-                'deps'               => $dependencies,
+                'deps'               => $dependencies, // Use the merged dependencies
                 'enqueue_top_window' => false, 
-                'enqueue_app_window' => true, // Load in the builder canvas
+                'enqueue_app_window' => true, 
             ],
-            // ADDED: Register CSS style file
             'style' => [
                 'src'                => NOKA_URL . 'visual-builder/build/noka-gallery-module.css',
                 'deps'               => [],
                 'enqueue_top_window' => false,
-                'enqueue_app_window' => true, // Load styles in the builder canvas
+                'enqueue_app_window' => true,
             ],
             'data' => [
                 'variableName' => 'NokaData',
@@ -359,4 +364,3 @@ function noka_gallery_register_visual_builder_assets() {
         ]
     );
 }
-// Hook is implicitly defined in the Noka_Gallery::__construct() method.
