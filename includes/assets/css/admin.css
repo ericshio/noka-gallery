@@ -1,0 +1,81 @@
+/* Layout */
+.noka-toolbar {
+    margin-bottom: 20px;
+    padding: 10px;
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+#noka-preview-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 12px;
+    margin-top: 20px;
+    min-height: 150px; /* Drop zone area */
+}
+
+/* Items */
+.noka-admin-item {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: grab;
+    overflow: hidden;
+    transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.noka-admin-item:active {
+    cursor: grabbing;
+    transform: scale(1.02);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    z-index: 100;
+}
+
+/* Sortable Placeholder (The gap where item will drop) */
+.noka-sortable-placeholder {
+    border: 2px dashed #2271b1;
+    background: #f0f6fc;
+    border-radius: 4px;
+    visibility: visible !important;
+}
+
+/* Image styling */
+.noka-admin-img {
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+}
+
+/* Selected State */
+.noka-admin-item.noka-selected {
+    border: 3px solid #2271b1;
+}
+
+/* Remove Button */
+.noka-remove {
+    position: absolute;
+    top: 5px; right: 5px;
+    width: 24px; height: 24px;
+    background: rgba(255,255,255,0.9);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0; 
+    transition: opacity 0.2s;
+    color: #d63638;
+}
+.noka-admin-item:hover .noka-remove { opacity: 1; }
+.noka-remove:hover { background: #d63638; color: white; }
+
+.noka-setting-row {
+    padding-top: 1em;
+}

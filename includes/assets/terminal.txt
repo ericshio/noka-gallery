@@ -1,0 +1,22 @@
+<!---- The setup command ----/>
+
+npm install
+
+<!---- The manufacturing command ----/>
+
+npm run build
+
+<!---- Remove node modules ----/>
+
+rm -rf node_modules
+
+
+<!---- Remove Source Code: The source code and build config files are not needed by WordPress. ----/>
+
+rm -rf src/
+rm webpack.config.js
+rm package-lock.json
+rm package.json
+
+<!---- Note: You can keep package.json and webpack.config.js if you plan to continue development,
+but they must be removed for a clean, production-ready release package.  ----/>

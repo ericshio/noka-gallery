@@ -1,0 +1,169 @@
+/* --- WRAPPER (The Outer Frame) --- */
+.noka-gallery-wrapper {
+    box-sizing: border-box;
+    width: 100%;
+    
+    /* UNIFORM PADDING
+       We removed the complex calculation. 
+       Now we just apply standard Half-Gap padding to all sides.
+       Wrapper Pad (e.g. 5px) + Item Pad (5px) = 10px (Full Gap).
+       This makes the outside borders exactly match the inside gaps. */
+    padding: var(--noka-pad);
+}
+
+/* Wrapper Responsive Logic (Kept for variable consistency) */
+@media (max-width: 980px) { .noka-gallery-wrapper { --noka-current-cols: var(--noka-cols-t); } }
+@media (max-width: 479px) { .noka-gallery-wrapper { --noka-current-cols: var(--noka-cols-m); } }
+
+
+/* --- GRID CONTAINER --- */
+.noka-masonry-grid {
+    position: relative;
+    width: 100%;
+    display: block;
+    padding: 0;
+    
+    /* Defaults */
+    --noka-cols-d: 3;
+    --noka-cols-t: 2;
+    --noka-cols-m: 1;
+    --noka-gap: 10px;
+    --noka-current-cols: var(--noka-cols-d);
+    
+    /* Style Defaults */
+    --noka-overlay-bg: rgba(0,0,0,0.5);
+    --noka-cursor: default;
+    --noka-radius: 0px;
+    --noka-lightbox-bg: rgba(0,0,0,0.85);
+    
+    box-sizing: border-box !important;
+}
+
+/* Clearfix */
+.noka-masonry-grid:after { content: ''; display: block; clear: both; }
+
+/* Responsive Columns */
+@media (max-width: 980px) { .noka-masonry-grid { --noka-current-cols: var(--noka-cols-t); } }
+@media (max-width: 479px) {
+    .noka-masonry-grid { --noka-current-cols: var(--noka-cols-m); }
+
+    .noka-item {
+        position: relative !important;
+        top: 0 !important;
+        left: 0 !important;
+    }
+}
+
+
+/* --- ITEMS --- */
+.noka-item {
+    /* WIDTH FIX: Micro-Buffer
+       We changed "-3px" to "-0.5px".
+       This is tiny enough to be invisible (no huge gap on the right),
+       but large enough to prevent the columns from dropping due to 
+       browser rounding errors. */
+    width: calc( (100% / var(--noka-current-cols)) - 0.5px );
+    
+    /* Gap: Created by PADDING inside the item */
+    padding: var(--noka-pad);
+    
+    /* Layout: FLOAT Left */
+    float: left;
+    margin: 0;
+    
+    box-sizing: border-box !important;
+}
+
+.noka-item-inner {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    height: auto; 
+    
+    border-radius: var(--noka-radius);
+    
+    /* --- SHIMMER EFFECT --- */
+    background: #f0f0f0;
+    background: linear-gradient(90deg, #f0f0f0 0%, #f7f7f7 50%, #f0f0f0 100%);
+    background-size: 200% 100%;
+    animation: nokaShimmer 1.5s infinite ease-in-out;
+    
+    cursor: var(--noka-cursor);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* --- IMAGES & VIDEO --- */
+.noka-img, .noka-video {
+    display: block; 
+    width: 100%; 
+    height: 100%; 
+    object-fit: cover; 
+    margin: 0;
+    transition: transform 0.5s ease, filter 0.3s ease;
+    position: relative; z-index: 1;
+}
+
+/* --- ANIMATIONS --- */
+.noka-anim-zoom .noka-item-inner:hover .noka-img,
+.noka-anim-zoom .noka-item-inner:hover .noka-video { transform: scale(1.08); }
+
+.noka-anim-grayscale .noka-img,
+.noka-anim-grayscale .noka-video { filter: grayscale(100%); }
+.noka-anim-grayscale .noka-item-inner:hover .noka-img,
+.noka-anim-grayscale .noka-item-inner:hover .noka-video { filter: grayscale(0%); }
+
+.noka-anim-lift .noka-item-inner:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.15); }
+
+/* --- OVERLAY --- */
+.noka-overlay {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: var(--noka-overlay-bg); opacity: 0; transition: opacity 0.3s;
+    display: flex; align-items: center; justify-content: center; pointer-events: none;
+    z-index: 2;
+}
+.noka-has-overlay .noka-item-inner:hover .noka-overlay { opacity: 1; pointer-events: auto; }
+.noka-overlay span { color: white; font-size: 30px; }
+.noka-overlay a { 
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+    display: flex; align-items: center; justify-content: center; pointer-events: auto; 
+}
+
+/* --- LIGHTBOX --- */
+.noka-hidden { display: none !important; }
+#noka-lightbox {
+    position: fixed; z-index: 99999; top: 0; left: 0; width: 100%; height: 100%;
+    background: var(--noka-lightbox-bg);
+    display: flex; align-items: center; justify-content: center;
+}
+.noka-lightbox-content { 
+    position: relative; max-width: 90%; max-height: 90%; 
+    display: flex; justify-content: center;
+}
+#noka-lightbox-media img, #noka-lightbox-media video { 
+    max-width: 100%; max-height: 80vh; 
+    box-shadow: 0 5px 30px rgba(0,0,0,0.5); 
+}
+.noka-close {
+    position: fixed; top: 25px; right: 25px; color: #fff; font-size: 30px; cursor: pointer;
+    opacity: 0.6; transition: opacity 0.2s ease, transform 0.2s; z-index: 100001; line-height: 1;
+}
+.noka-close:hover { opacity: 1; transform: scale(1.1); }
+.noka-prev, .noka-next {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    color: white; font-size: 32px; cursor: pointer; z-index: 100000;
+    opacity: 0.5; transition: opacity 0.3s ease; background: none; padding: 10px; width: 60px; text-align: center;
+}
+.noka-prev:hover, .noka-next:hover { opacity: 1; background: none; }
+.noka-prev { left: 30px; }
+.noka-next { right: 30px; }
+@media (max-width: 768px) {
+    .noka-prev { left: 5px; } .noka-next { right: 5px; } .noka-close { top: 15px; right: 15px; }
+}
+.noka-fade-in { opacity: 0; animation: nokaFadeIn 0.5s ease forwards; }
+@keyframes nokaFadeIn { to { opacity: 1; } }
+
+/* Shimmer Keyframes */
+@keyframes nokaShimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}

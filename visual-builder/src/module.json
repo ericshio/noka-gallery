@@ -1,0 +1,76 @@
+{
+  "name": "noka/gallery-module",
+  "slug": "noka-gallery-module",
+  "d4Shortcode": "noka_gallery_module",
+  "title": "Noka Gallery",
+  "titles": "Noka Galleries",
+  "category": "module",
+  "moduleClassName": "noka_gallery_module",
+  "moduleOrderClassName": "noka_gallery_module",
+  "attributes": {
+    "module": {
+      "type": "object",
+      "selector": "{{selector}}",
+      "default": {
+        "meta": {
+          "adminLabel": {
+            "desktop": {
+              "value": "Noka Gallery"
+            }
+          }
+        }
+      },
+      "settings": {
+        "meta": {
+          "adminLabel": {}
+        },
+        "decoration": {
+          "background": {},
+          "sizing": {},
+          "spacing": {},
+          "border": {},
+          "boxShadow": {},
+          "filters": {},
+          "transform": {},
+          "animation": {},
+          "overflow": {},
+          "disabledOn": {},
+          "transition": {},
+          "position": {},
+          "zIndex": {},
+          "scroll": {},
+          "sticky": {}
+        }
+      }
+    },
+    "gallery_select": {
+      "type": "object",
+      "selector": "{{selector}} .noka-gallery-module",
+      "settings": {
+        "innerContent": {
+          "groupType": "group-item",
+          "item": {
+            "groupName": "mainContent",
+            "priority": 10,
+            "render": true,
+            "attrName": "gallery_select.innerContent",
+            "label": "Select Gallery",
+            "description": "Choose the gallery to display.",
+            "features": {
+              "dynamicContent": false
+            },
+            "component": {
+              "name": "divi/select",
+              "type": "field"
+            }
+          }
+        }
+      }
+    }
+  },
+  "settings": {
+    "content": "auto",
+    "design": "auto",
+    "advanced": "auto"
+  }
+}
