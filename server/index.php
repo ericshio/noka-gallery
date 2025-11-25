@@ -1,6 +1,4 @@
-<?php
-
-namespace NokaGallery;
+<?php namespace NokaGallery;
 
 if ( ! defined( 'ABSPATH' ) ) {
     die( 'Direct access forbidden.' );
@@ -53,32 +51,6 @@ class NokaGalleryServer implements DependencyInterface {
     }
 
     /**
-     * Render module assets (Styles and Scripts).
-     * This method loads assets ONLY when the module is rendered on the public frontend.
-     */
-    public static function module_assets() {
-        $version = NOKA_VERSION;
-        
-        // 1. Enqueue Frontend JavaScript (Handles Lightbox/Masonry)
-        wp_enqueue_script( 
-            'noka-frontend', 
-            NOKA_URL . 'includes/assets/js/frontend.js', 
-            array( 'jquery', 'masonry', 'imagesloaded' ), 
-            $version, 
-            true 
-        );
-        
-        // 2. Enqueue Stylesheet (Handles Layout/Animations)
-        wp_enqueue_style( 
-            'noka-style', 
-            // FINAL FIX: Pointing to the Webpack-built CSS file for consistency
-            NOKA_URL . 'visual-builder/build/noka-gallery-module.css', 
-            array(), 
-            $version 
-        );
-    }
-
-    /**
      * Render module HTML output.
      */
     public static function render_callback( $attrs, $content, $block, $elements ) {
@@ -104,5 +76,4 @@ add_action(
     }
 );
 
-// ADD THIS HOOK: Tells Divi to call your module_assets function
-add_action( 'divi_frontend_assets_render_module_' . NokaGalleryServer::get_module_slug(), [ NokaGalleryServer::class, 'module_assets' ] );
+// The hook that called module_assets() was removed previously, and is not needed here.

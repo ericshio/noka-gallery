@@ -294,6 +294,10 @@ class Noka_Gallery {
     
     public function fix_mediaelement_conflict() {
         if ( function_exists('et_core_is_fb_enabled') && et_core_is_fb_enabled() ) {
+            wp_deregister_script( 'wp-mediaelement' );
+            wp_deregister_style( 'wp-mediaelement' );
+        
+            // Existing: Dequeue just in case (kept for safety)
             wp_dequeue_script( 'wp-mediaelement' );
             wp_dequeue_style( 'wp-mediaelement' );
         }
@@ -337,7 +341,14 @@ function noka_gallery_register_visual_builder_assets() {
                 'src'                => NOKA_URL . 'visual-builder/build/noka-gallery-module.js',
                 'deps'               => $dependencies,
                 'enqueue_top_window' => false, 
-                'enqueue_app_window' => true,  // Load in the builder canvas (essential for Divi 5)
+                'enqueue_app_window' => true, // Load in the builder canvas
+            ],
+            // ADDED: Register CSS style file
+            'style' => [
+                'src'                => NOKA_URL . 'visual-builder/build/noka-gallery-module.css',
+                'deps'               => [],
+                'enqueue_top_window' => false,
+                'enqueue_app_window' => true, // Load styles in the builder canvas
             ],
             'data' => [
                 'variableName' => 'NokaData',
