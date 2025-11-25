@@ -41,10 +41,11 @@ class Noka_Gallery {
         
         // --- FINAL FIX: RELIABLE BUILDER JS ENQUEUE HOOKS ---
         // 1. Use the standard WP hook with the robust conditional check.
-        add_action( 'wp_enqueue_scripts', array( $this, 'force_builder_js_load' ) );
+        // add_action( 'wp_enqueue_scripts', array( $this, 'force_builder_js_load' ) );
         
         // 2. Add fix for MediaElement conflict that crashes the builder JS.
         add_action( 'admin_enqueue_scripts', array( $this, 'fix_mediaelement_conflict' ), 1 );
+        add_action( 'wp_enqueue_scripts', array( $this, 'fix_mediaelement_conflict' ), 1 ); // <-- NEW HOOK
 
         // 3. Keep Divi 5 registration method for official hooks (backend registration)
         add_action( 'divi_visual_builder_assets_before_enqueue_scripts', 'noka_gallery_register_visual_builder_assets' );
@@ -268,7 +269,7 @@ class Noka_Gallery {
         <?php
         return ob_get_clean();
     }
-    
+    /*
     // --- FINAL FIX: FORCE BUILDER JS LOAD METHOD (Correctly inside class) ---
     public function force_builder_js_load() {
         // This acts as a reliable fallback using the stable et_core_is_fb_enabled check.
@@ -291,6 +292,7 @@ class Noka_Gallery {
             }
         }
     }
+    */
     
     public function fix_mediaelement_conflict() {
         if ( function_exists('et_core_is_fb_enabled') && et_core_is_fb_enabled() ) {
