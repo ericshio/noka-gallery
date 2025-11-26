@@ -4,28 +4,26 @@ const DependencyExtractionWebpackPlugin = require('@wordpress/dependency-extract
 
 module.exports = {
   mode: 'production', 
-  
   entry: {
     'noka-gallery-module': './src/index.jsx',
   },
-
+  
+  // FIX: Tell Webpack NOT to bundle these. Use WordPress's global versions instead.
   externals: {
     react: 'React',
+    'react-dom': 'ReactDOM',
+    jquery: 'jQuery',
+    'lodash': 'lodash'
   },
 
   plugins: [
-    // Automatically handles dependency externals and creates the .asset.php file
     new DependencyExtractionWebpackPlugin({
         injectPolyfill: true,
         requestToExternal: (request) => {
-            // Treat Divi's module library as an external dependency
-            if (request.startsWith('@divi/module-library')) {
-                return ['window', 'divi', 'moduleLibrary'];
-            }
+            if (request.startsWith('@divi/module-library')) return ['window', 'divi', 'moduleLibrary'];
+            if (request.startsWith('@divi/')) return ['window', 'divi', request.replace('@divi/', '')];
         },
     }),
-    
-    // Extracts CSS to a separate file
     new MiniCssExtractPlugin({
       filename: 'noka-gallery-module.css',
     }),
@@ -33,7 +31,6 @@ module.exports = {
 
   module: {
     rules: [
-      // 1. Handle JS/JSX files
       {
         test: /\.jsx?$/,
         exclude: /node_modules/,
@@ -47,32 +44,17 @@ module.exports = {
           }
         ]
       },
-
-      // 2. Handle CSS files
       {
         test: /\.css$/,
-        use: [
-          MiniCssExtractPlugin.loader,
-          {
-            loader: 'css-loader',
-            options: {
-              importLoaders: 1,
-            },
-          },
-        ],
+        use: [ MiniCssExtractPlugin.loader, 'css-loader' ],
       },
     ]
   },
-
   resolve: {
     extensions: ['.js', '.jsx'],
   },
-
-  // Determine where the created bundles will be outputted.
   output: {
-    // Ensure the module is available to the global context 
-    libraryTarget: 'this', 
-    
+    libraryTarget: 'window', // Expose to window instead of 'this'
     filename: '[name].js', 
     path: path.resolve(__dirname, 'build'),
   },

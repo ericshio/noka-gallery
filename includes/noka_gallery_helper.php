@@ -1,13 +1,7 @@
 <?php
-
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 class Noka_Gallery_Helper {
-    /**
-     * Fetches a list of all Noka Galleries for use in dropdowns.
-     *
-     * @return array Array of gallery IDs mapped to their title (e.g., [123 => 'My Gallery (ID: 123)'])
-     */
     public static function get_galleries() {
         $galleries = get_posts(array(
             'post_type'      => 'noka_gallery',
@@ -22,7 +16,9 @@ class Noka_Gallery_Helper {
         );
 
         foreach ( $galleries as $id ) {
-            $options[ $id ] = get_the_title( $id ) . ' (ID: ' . $id . ')';
+            // FORCE STRING KEY to prevent JSON array conversion
+            $str_id = (string) $id; 
+            $options[ $str_id ] = get_the_title( $id ) . ' (ID: ' . $id . ')';
         }
 
         return $options;

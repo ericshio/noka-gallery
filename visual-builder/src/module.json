@@ -12,40 +12,23 @@
       "type": "object",
       "selector": "{{selector}}",
       "default": {
-        "meta": {
-          "adminLabel": {
-            "desktop": {
-              "value": "Noka Gallery"
-            }
-          }
-        }
+        "meta": { "adminLabel": { "desktop": { "value": "Noka Gallery" } } }
       },
       "settings": {
-        "meta": {
-          "adminLabel": {}
-        },
-        "decoration": {
-          "background": {},
-          "sizing": {},
-          "spacing": {},
-          "border": {},
-          "boxShadow": {},
-          "filters": {},
-          "transform": {},
-          "animation": {},
-          "overflow": {},
-          "disabledOn": {},
-          "transition": {},
-          "position": {},
-          "zIndex": {},
-          "scroll": {},
-          "sticky": {}
-        }
+        "meta": { "adminLabel": {} },
+        "decoration": { "background": {}, "border": {}, "boxShadow": {}, "disabledOn": {}, "position": {}, "zIndex": {} }
       }
     },
     "gallery_select": {
       "type": "object",
       "selector": "{{selector}} .noka-gallery-module",
+      "default": {
+        "innerContent": {
+          "desktop": {
+            "value": "none"
+          }
+        }
+      },
       "settings": {
         "innerContent": {
           "groupType": "group-item",
@@ -56,11 +39,6 @@
             "attrName": "gallery_select.innerContent",
             "label": "Select Gallery",
             "description": "Choose the gallery to display.",
-            "features": {
-              "dynamicContent": {
-                "type": "text"
-              }
-            },
             "component": {
               "name": "divi/select",
               "type": "field"
