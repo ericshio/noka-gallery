@@ -114,12 +114,27 @@ class Noka_Gallery {
 
     public function render_shortcode( $atts ) {
         $a = shortcode_atts( array( 'id' => 0 ), $atts ); if ( ! $a['id'] ) return ''; $post_id = $a['id'];
-        $saved_cols_d = get_post_meta( $post_id, '_noka_cols_d', true ) ?: 3; $saved_cols_t = get_post_meta( $post_id, '_noka_cols_t', true ) ?: 2; $saved_cols_m = get_post_meta( $post_id, '_noka_cols_m', true ) ?: 1; $saved_gap = get_post_meta( $post_id, '_noka_gap', true ) ?: 10; $saved_size = get_post_meta( $post_id, '_noka_image_size', true ) ?: 'large'; $saved_lightbox = get_post_meta( $post_id, '_noka_lightbox', true ); if($saved_lightbox === '') $saved_lightbox = '1'; $anim = get_post_meta( $post_id, '_noka_hover_anim', true ) ?: 'none'; $show_overlay = get_post_meta( $post_id, '_noka_show_overlay', true ) ?: '0'; $overlay_bg = get_post_meta( $post_id, '_noka_overlay_bg', true ) ?: 'rgba(0,0,0,0.5)'; $cursor = get_post_meta( $post_id, '_noka_cursor', true ) ?: 'default'; $radius = get_post_meta( $post_id, '_noka_radius', true ) ?: '0'; $lightbox_bg = get_post_meta( $post_id, '_noka_lightbox_bg', true ) ?: 'rgba(0,0,0,0.85)';
+        
+        $saved_cols_d = get_post_meta( $post_id, '_noka_cols_d', true ) ?: 3; 
+        $saved_cols_t = get_post_meta( $post_id, '_noka_cols_t', true ) ?: 2; 
+        $saved_cols_m = get_post_meta( $post_id, '_noka_cols_m', true ) ?: 1; 
+        $saved_gap = get_post_meta( $post_id, '_noka_gap', true ) ?: 10; 
+        $saved_size = get_post_meta( $post_id, '_noka_image_size', true ) ?: 'large'; 
+        
+        $saved_lightbox = get_post_meta( $post_id, '_noka_lightbox', true ); if($saved_lightbox === '') $saved_lightbox = '1'; 
+        $anim = get_post_meta( $post_id, '_noka_hover_anim', true ) ?: 'none'; 
+        $show_overlay = get_post_meta( $post_id, '_noka_show_overlay', true ) ?: '0'; 
+        $overlay_bg = get_post_meta( $post_id, '_noka_overlay_bg', true ) ?: 'rgba(0,0,0,0.5)'; 
+        $cursor = get_post_meta( $post_id, '_noka_cursor', true ) ?: 'default'; 
+        $radius = get_post_meta( $post_id, '_noka_radius', true ) ?: '0'; 
+        $lightbox_bg = get_post_meta( $post_id, '_noka_lightbox_bg', true ) ?: 'rgba(0,0,0,0.85)';
+        
         $final_atts = shortcode_atts( array( 'cols_d' => $saved_cols_d, 'cols_t' => $saved_cols_t, 'cols_m' => $saved_cols_m, 'gap' => $saved_gap ), $atts );
         $ids = get_post_meta( $post_id, '_noka_gallery_ids', true ); if ( empty( $ids ) ) return ''; $id_array = explode( ',', $ids );
         $version = NOKA_VERSION;
 
         wp_enqueue_script( 'noka-frontend', NOKA_URL . 'includes/assets/js/frontend.js', array( 'jquery', 'masonry', 'imagesloaded' ), $version, true );
+        
         $is_builder = ( function_exists( 'et_core_is_fb_enabled' ) && et_core_is_fb_enabled() ) || ( function_exists( 'is_et_pb_preview' ) && is_et_pb_preview() );
         if ( ! $is_builder ) {
             wp_enqueue_style( 'noka-style', NOKA_URL . 'visual-builder/build/noka-gallery-module.css', array(), $version );
@@ -138,16 +153,37 @@ class Noka_Gallery {
         <div class="noka-gallery-wrapper" style="<?php echo esc_attr($style_vars); ?>">
             <div class="<?php echo esc_attr($container_classes); ?>" style="<?php echo esc_attr($style_vars); ?>">
                 <?php foreach ( $id_array as $media_id ) : 
-                    $url = wp_get_attachment_url( $media_id ); if(!$url) continue;
-                    $mime = get_post_mime_type( $media_id ); $is_video = strpos( $mime, 'video' ) !== false;
-                    $link_class = ($saved_lightbox === '1') ? 'noka-lightbox-trigger' : ''; $link_attr  = ($saved_lightbox === '1') ? '' : 'onclick="return false;"';
-                    $meta = wp_get_attachment_metadata( $media_id ); $w = $meta['width'] ?? 1; $h = $meta['height'] ?? 1; $ratio_css = "aspect-ratio: {$w} / {$h};";
+                    // FIX: Get dimensions of the *actual* size being displayed, NOT the metadata original
+                    $img_src = wp_get_attachment_image_src( $media_id, $saved_size );
+                    if ( ! $img_src ) continue;
+                    
+                    $url = $img_src[0];
+                    $w   = $img_src[1];
+                    $h   = $img_src[2];
+                    
+                    // If video, fallback to metadata (videos don't have 'large' image sizes usually)
+                    $mime = get_post_mime_type( $media_id ); 
+                    $is_video = strpos( $mime, 'video' ) !== false;
+                    
+                    if ( $is_video ) {
+                         $url = wp_get_attachment_url( $media_id );
+                         $meta = wp_get_attachment_metadata( $media_id );
+                         $w = $meta['width'] ?? 16;
+                         $h = $meta['height'] ?? 9;
+                    }
+
+                    $ratio_css = "aspect-ratio: {$w} / {$h};";
+                    $link_class = ($saved_lightbox === '1') ? 'noka-lightbox-trigger' : ''; 
+                    $link_attr  = ($saved_lightbox === '1') ? '' : 'onclick="return false;"';
                 ?>
                     <div class="noka-item">
                         <div class="noka-item-inner" style="<?php echo esc_attr($ratio_css); ?>">
                             <?php if ( $is_video ) : ?>
                                 <video class="noka-video" autoplay loop muted playsinline><source src="<?php echo esc_url($url); ?>"></video>
-                            <?php else : echo wp_get_attachment_image( $media_id, $saved_size, false, array( 'class' => 'noka-img', 'loading' => 'lazy' ) ); endif; ?>
+                            <?php else : 
+                                // Explicitly output width/height to help browser layout faster
+                                echo wp_get_attachment_image( $media_id, $saved_size, false, array( 'class' => 'noka-img', 'loading' => 'lazy' ) ); 
+                            endif; ?>
                             <div class="noka-overlay"><a href="<?php echo esc_url($url); ?>" class="<?php echo esc_attr($link_class); ?>" <?php echo $link_attr; ?> data-type="<?php echo $is_video ? 'video' : 'image'; ?>"><?php if($show_overlay === '1' && $saved_lightbox === '1') echo '<span class="dashicons dashicons-visibility"></span>'; ?></a></div>
                         </div>
                     </div>
