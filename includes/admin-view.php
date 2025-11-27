@@ -4,11 +4,17 @@
     <h3>Gallery Media</h3>
     <input type="hidden" name="noka_gallery_ids" id="noka_gallery_ids" value="<?php echo esc_attr( $gallery_ids ); ?>">
     
-    <div class="noka-toolbar">
+    <div class="noka-toolbar" style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
         <button type="button" class="button button-primary button-large" id="noka-add-media">
             <span class="dashicons dashicons-plus-alt2" style="margin-top: 3px;"></span> Add Media
         </button>
-        <button type="button" class="button button-secondary button-large" id="noka-delete-selected" style="display:none; color: #b32d2e; border-color: #b32d2e;">
+        
+        <label style="margin-left: 5px; cursor: pointer; display: flex; align-items: center;">
+            <input type="checkbox" id="noka-prepend-check" value="1" style="margin-right: 5px;"> 
+            Add new to start
+        </label>
+
+        <button type="button" class="button button-secondary button-large" id="noka-delete-selected" style="display:none; margin-left: auto; color: #b32d2e; border-color: #b32d2e;">
             <span class="dashicons dashicons-trash" style="margin-top: 3px;"></span> Delete Selected
         </button>
     </div>
@@ -18,11 +24,21 @@
         if ( ! empty( $gallery_ids ) ) {
             $ids = explode( ',', $gallery_ids );
             foreach ( $ids as $id ) {
-                $url = wp_get_attachment_image_url( $id, 'thumbnail' );
-                if( !$url ) $url = includes_url('images/media/video.png'); 
-                echo '<div class="noka-admin-item" data-id="' . esc_attr($id) . '">';
+                // 'true' asks WP for the icon if it's not an image (handles videos automatically)
+                $img_atts = wp_get_attachment_image_src( $id, 'thumbnail', true );
+                $url = $img_atts ? $img_atts[0] : '';
+                
+                // Get the actual filename for display
+                $file_path = get_attached_file( $id );
+                $filename = $file_path ? wp_basename( $file_path ) : 'Media #' . $id;
+
+                echo '<div class="noka-admin-item" data-id="' . esc_attr($id) . '" title="' . esc_attr($filename) . '" style="position:relative;">';
                 echo '<div class="noka-admin-img" style="background-image:url(' . esc_url($url) . ')"></div>';
-                echo '<div class="noka-remove"><span class="dashicons dashicons-no-alt"></span></div>';
+                
+                // Filename Overlay
+                echo '<div class="noka-filename" style="position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,0.7); color:#fff; font-size:10px; padding:2px 4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; pointer-events:none;">' . esc_html($filename) . '</div>';
+                
+                echo '<div class="noka-remove" style="z-index:10;"><span class="dashicons dashicons-no-alt"></span></div>';
                 echo '</div>';
             }
         }

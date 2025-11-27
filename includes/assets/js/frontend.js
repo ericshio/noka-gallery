@@ -7,8 +7,6 @@ jQuery(function($) {
         $grid.data('noka-initialized', true);
 
         // 1. Initialize Masonry ONCE
-        // We trust the CSS aspect-ratios to hold the space, so we don't need
-        // to re-layout constantly while loading.
         var msnry = $grid.masonry({
             itemSelector: '.noka-item',
             percentPosition: true,
@@ -17,7 +15,6 @@ jQuery(function($) {
         });
 
         // 2. The Resize Fix (Standard Mobile Stability)
-        // Ignores vertical scrolls (URL bar), only updates on rotation
         var lastWindowWidth = $(window).width();
 
         $(window).on('resize', function() {
@@ -32,15 +29,13 @@ jQuery(function($) {
     }
 
     // --- INIT ---
-    // Run immediately to catch existing galleries
     $('.noka-masonry-grid').each(function() { initSingleGallery(this); });
     
-    // Run again on full window load just to be 100% sure everything is settled
     $(window).on('load', function() {
         $('.noka-masonry-grid').masonry('layout');
     });
 
-    // --- Lightbox Logic (Unchanged) ---
+    // --- Lightbox Logic ---
     var $lightbox = $('#noka-lightbox');
     if ($lightbox.length) {
         var $mediaContainer = $('#noka-lightbox-media');
@@ -68,9 +63,14 @@ jQuery(function($) {
             activeIndex = index;
             var item = activeGalleryItems[index];
             $lightbox.removeClass('noka-hidden');
+            
+            // --- UPDATED VIDEO LOGIC HERE ---
+            // Removed 'controls'
+            // Added: loop, muted, playsinline
+            // Added style: pointer-events: none (prevents clicking to pause)
             $mediaContainer.html(item.type === 'video' 
-                ? `<video controls autoplay src="${item.url}" style="max-width:100%; max-height:80vh"></video>` 
-                : `<img src="${item.url}">`
+                ? `<video src="${item.url}" autoplay loop muted playsinline style="max-width:100%; max-height:80vh; pointer-events: none;"></video>` 
+                : `<img src="${item.url}" style="max-width:100%; max-height:90vh;">`
             );
         }
 
