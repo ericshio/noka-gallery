@@ -60,11 +60,12 @@
             <label>Image Resolution</label>
             <select name="noka_image_size">
                 <option value="thumbnail" <?php selected($image_size, 'thumbnail'); ?>>Thumbnail (Low)</option>
-                <option value="medium" <?php selected($image_size, 'medium'); ?>>Medium</option>
-                <option value="large" <?php selected($image_size, 'large'); ?>>Large (Default)</option>
+                <option value="medium" <?php selected($image_size, 'medium'); ?>>Medium (300px)</option>
+                <option value="medium_large" <?php selected($image_size, 'medium_large'); ?>>Medium Large (768px) - RECOMMENDED</option>
+                <option value="large" <?php selected($image_size, 'large'); ?>>Large (1024px+)</option>
                 <option value="full" <?php selected($image_size, 'full'); ?>>Full (Original Quality)</option>
             </select>
-            <p class="description">Select "Full" for maximum sharpness, but ensure your images are optimized.</p>
+            <p class="description">"Medium Large" is the ideal balance for mobile/desktop galleries.</p>
         </div>
 
         <div class="noka-setting-row">

@@ -1,12 +1,43 @@
 jQuery(function($) {
     
+    // --- 1. LAZY VIDEO OBSERVER (The Speed Fix) ---
+    // This watches videos and only plays them when 25% visible
+    var nokaVideoObserver = null;
+
+    if ('IntersectionObserver' in window) {
+        nokaVideoObserver = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+                var video = entry.target;
+                if (entry.isIntersecting) {
+                    // Video entered viewport: PLAY
+                    var playPromise = video.play();
+                    if (playPromise !== undefined) {
+                        playPromise.catch(function(error) { 
+                            // Auto-play was prevented by browser (low power mode, etc)
+                        });
+                    }
+                } else {
+                    // Video left viewport: PAUSE
+                    video.pause();
+                }
+            });
+        }, { threshold: 0.25 }); // Trigger when 25% of video is visible
+    }
+
     function initSingleGallery(element) {
         var $grid = $(element);
         
         if ($grid.data('noka-initialized')) return;
         $grid.data('noka-initialized', true);
 
-        // 1. Initialize Masonry
+        // A. Register Videos with Observer
+        if (nokaVideoObserver) {
+            $grid.find('video.noka-video').each(function() {
+                nokaVideoObserver.observe(this);
+            });
+        }
+
+        // B. Initialize Masonry
         var msnry = $grid.masonry({
             itemSelector: '.noka-item',
             percentPosition: true,
@@ -14,7 +45,7 @@ jQuery(function($) {
             transitionDuration: '0.4s'
         });
 
-        // 2. Resize Fix
+        // C. Resize Fix
         var lastWindowWidth = $(window).width();
         $(window).on('resize', function() {
             var newWindowWidth = $(window).width();
@@ -63,10 +94,12 @@ jQuery(function($) {
             var item = activeGalleryItems[index];
             $lightbox.removeClass('noka-hidden');
             
-            // --- UPDATED: NO INLINE STYLES ---
-            // We removed style="..." so your CSS file now fully controls the size.
+            // LIGHTBOX VIDEO: 
+            // - No controls
+            // - Autoplay (It's the focus now)
+            // - Pointer events none (Can't click to pause)
             $mediaContainer.html(item.type === 'video' 
-                ? `<video src="${item.url}" autoplay loop muted playsinline></video>` 
+                ? `<video src="${item.url}" autoplay loop muted playsinline style="max-width:100%; max-height:80vh; pointer-events: none;"></video>` 
                 : `<img src="${item.url}">`
             );
         }

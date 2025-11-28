@@ -2,7 +2,7 @@
 /*
  * Plugin Name: Noka Gallery
  * Description: A lightweight, masonry gallery plugin. Native Divi 5 Support.
- * Version: 1.3.7
+ * Version: 1.3.9
  * Requires PHP: 7.4
  * Requires at least: 5.8
  * Author: Eric Shiozaki
@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 
 define( 'NOKA_PATH', plugin_dir_path( __FILE__ ) );
 define( 'NOKA_URL', plugin_dir_url( __FILE__ ) );
-define( 'NOKA_VERSION', '1.3.7' );
+define( 'NOKA_VERSION', '1.3.9' );
 
 // Load Divi Interface if available
 $divi_interface_path = ABSPATH . 'wp-content/themes/Divi/includes/builder-5/server/Framework/DependencyManagement/Interfaces/DependencyInterface.php';
@@ -149,7 +149,7 @@ class Noka_Gallery {
         $radius = get_post_meta( $post->ID, '_noka_radius', true ) ?: '0'; 
         $lightbox_bg = get_post_meta( $post->ID, '_noka_lightbox_bg', true ) ?: 'rgba(0,0,0,0.85)'; 
         
-        // This file is now using your updated admin-view.php
+        // Include the separate Admin View file
         require NOKA_PATH . 'includes/admin-view.php'; 
     }
     
@@ -218,16 +218,23 @@ class Noka_Gallery {
         if($anim !== 'none') $container_classes .= ' noka-anim-' . esc_attr($anim);
         if($show_overlay === '1') $container_classes .= ' noka-has-overlay';
 
+        // --- SMART SIZES ATTRIBUTE (Speed Fix) ---
+        // Forces browser to select appropriate image size for the column width
+        $sizes_attr = "(max-width: 767px) calc(100vw / {$final_atts['cols_m']}), (max-width: 980px) calc(100vw / {$final_atts['cols_t']}), calc(100vw / {$final_atts['cols_d']})";
+
         ob_start();
         ?>
         <div class="noka-gallery-wrapper" style="<?php echo esc_attr($style_vars); ?>">
             <div class="<?php echo esc_attr($container_classes); ?>" style="<?php echo esc_attr($style_vars); ?>">
-                <?php foreach ( $id_array as $media_id ) : 
+                <?php 
+                $counter = 0; // Init LCP Counter
+                foreach ( $id_array as $media_id ) : 
+                    
                     // 1. DATA RETRIEVAL
                     $img_src = wp_get_attachment_image_src( $media_id, $saved_size );
+                    
                     // Fallback for missing/broken media
                     if ( ! $img_src ) {
-                        // Double check if it's a video even if image_src failed
                         $mime = get_post_mime_type( $media_id ); 
                         if ( strpos( $mime, 'video' ) === false ) continue;
                     }
@@ -240,19 +247,27 @@ class Noka_Gallery {
                     // 2. VIDEO DETECTION
                     $mime = get_post_mime_type( $media_id ); 
                     $is_video = strpos( $mime, 'video' ) !== false;
-                    
+                    $poster_url = '';
+
                     if ( $is_video ) {
-                         // Videos need direct URL and Metadata for size
                          $url = wp_get_attachment_url( $media_id );
                          $meta = wp_get_attachment_metadata( $media_id );
                          $w = $meta['width'] ?? 16;
                          $h = $meta['height'] ?? 9;
+
+                         // POSTER IMAGE (Critical for LCP and Lazy Play)
+                         $thumb_src = wp_get_attachment_image_src( $media_id, $saved_size );
+                         if ( $thumb_src ) $poster_url = $thumb_src[0];
                     }
 
                     // 3. LAYOUT CALCULATION
                     $ratio_css = ($w && $h) ? "aspect-ratio: {$w} / {$h};" : "aspect-ratio: 16/9;";
                     
-                    // Lightbox attributes (Note: clicking a video usually shouldn't trigger lightbox if it's acting as a BG, but keeping logic here)
+                    // LCP LOGIC: Eager load first item, lazy load the rest
+                    $is_lcp = ($counter === 0);
+                    $loading_attr = $is_lcp ? 'eager' : 'lazy';
+                    $fetch_attr   = $is_lcp ? 'high' : 'auto';
+
                     $link_class = ($saved_lightbox === '1') ? 'noka-lightbox-trigger' : ''; 
                     $link_attr  = ($saved_lightbox === '1') ? '' : 'onclick="return false;"';
                 ?>
@@ -262,7 +277,7 @@ class Noka_Gallery {
                             <?php if ( $is_video ) : ?>
                                 <video 
                                     src="<?php echo esc_url($url); ?>" 
-                                    autoplay 
+                                    poster="<?php echo esc_url($poster_url); ?>"
                                     loop 
                                     muted 
                                     playsinline 
@@ -272,7 +287,9 @@ class Noka_Gallery {
                             <?php else : ?>
                                 <?php echo wp_get_attachment_image( $media_id, $saved_size, false, array( 
                                     'class' => 'noka-img', 
-                                    'loading' => 'lazy',
+                                    'loading' => $loading_attr,
+                                    'fetchpriority' => $fetch_attr,
+                                    'sizes' => $sizes_attr, 
                                     'style' => 'width: 100%; height: 100%; object-fit: cover; display: block;'
                                 ) ); ?>
                             <?php endif; ?>
@@ -284,7 +301,10 @@ class Noka_Gallery {
                             </div>
                         </div>
                     </div>
-                <?php endforeach; ?>
+                <?php 
+                $counter++; 
+                endforeach; 
+                ?>
             </div>
         </div>
         <?php return ob_get_clean();
